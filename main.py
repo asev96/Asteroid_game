@@ -7,6 +7,10 @@ from player import Player
 from asteroid import Asteroid
 from asteroidfield import AsteroidField
 from shot import Shot
+from powerup import PowerUp
+from particle import Particle
+from floatingtext import FloatingText
+import random
 import sys
 
 
@@ -16,6 +20,7 @@ def main():
     print(f"Screen height: {SCREEN_HEIGHT}")
     pygame.init()
     game_over = False
+    score = 0
     font = pygame.font.Font(None, 36)
     clock = pygame.time.Clock()
     dt = 0.0
@@ -24,11 +29,15 @@ def main():
     drawable = pygame.sprite.Group()
     asteroids = pygame.sprite.Group()
     shots = pygame.sprite.Group()
+    powerups = pygame.sprite.Group()
 
     AsteroidField.containers = (updatable)
     Asteroid.containers = (asteroids, drawable, updatable)
     Player.containers = (updatable, drawable)
     Shot.containers = (updatable, drawable, shots)
+    PowerUp.containers = (powerups, updatable, drawable)
+    Particle.containers = (updatable, drawable)
+    FloatingText.containers = (updatable, drawable)
     player = Player(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
     asteroid_field = AsteroidField()
 
@@ -50,6 +59,8 @@ def main():
                         a.kill()
                     for s in shots:
                         s.kill()
+                    for p in powerups:
+                        p.kill()
 
 
 
@@ -60,6 +71,7 @@ def main():
                 if player.invulnerable_timer <= 0 and a.collides_with(player):
                     log_event("player_hit")
                     player.lives -= 1
+                    FloatingText(player.position.x, player.position.y, "-1 life", font)
                     if player.lives <= 0:
                         game_over = True
 
@@ -70,17 +82,36 @@ def main():
 
 
 
+            for powerup in powerups:
+                if powerup.collides_with(player):
+                    if powerup.kind == "shotgun":
+                        player.shotgun_timer = 10.0  # 10 seconds of shotgun power!
+                    powerup.kill()  # remove it from the screen
+
             for asteroid in asteroids:
                 for shot in shots:
                     if shot.collides_with(asteroid):
                         log_event("asteroid_shot")
+                        score += 100
+                        FloatingText(asteroid.position.x, asteroid.position.y, "+100", font)
+                        for _ in range(15):
+                            Particle(asteroid.position.x, asteroid.position.y)
+
+                        if random.random() < 0.08:
+                            PowerUp(asteroid.position.x, asteroid.position.y, "shotgun")
+
                         asteroid.split()
                         shot.kill()
+                        break
 
 
             for d in drawable:
                 d.draw(screen)
                 lives_text = font.render(f"Lives: {player.lives}", True, "white")
+                score_text = font.render(f"SCORE: {score}", True, "white")
+                score_x = SCREEN_WIDTH - score_text.get_width()
+                score_y = 10
+                screen.blit(score_text, (score_x, score_y))
                 screen.blit(lives_text, (10, 10))
         else:
             game_over_text = font.render("GAME OVER - Press R to Restart", True, "red")
