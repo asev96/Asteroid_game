@@ -53,6 +53,7 @@ def main():
                 if event.key == pygame.K_r:
                     player.position = pygame.Vector2(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
                     player.lives = 3
+                    score = 0
                     game_over = False
                     player.invulnerable_timer = 3.0
                     for a in asteroids:
@@ -97,7 +98,7 @@ def main():
                         for _ in range(15):
                             Particle(asteroid.position.x, asteroid.position.y)
 
-                        if random.random() < 0.08:
+                        if random.random() < 0.02:
                             PowerUp(asteroid.position.x, asteroid.position.y, "shotgun")
 
                         asteroid.split()
